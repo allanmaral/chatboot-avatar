@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { promises as fs } from "node:fs";
+import path from "node:path";
 
 import { execCommand } from "./command";
 import { FacialExpression, Message, MouthCue } from "./chat";
@@ -109,11 +110,13 @@ export async function lipSyncAudio(audio: Buffer): Promise<MouthCue[]> {
   await fs.writeFile(audioFileName, audio);
 
   // Convert it to .wav so rhubarb can process it
-  await execCommand(`./bin/ffmpeg -y -i ${audioFileName} ${wavFilename}`);
+  const ffmpegPath = path.resolve('./bin/ffmpeg');
+  await execCommand(`${ffmpegPath} -y -i ${audioFileName} ${wavFilename}`);
 
   // Convert the audio to a lip sync description file
+  const rhubarbPath = path.resolve('./bin/rhubarb');
   await execCommand(
-    `./bin/rhubarb -f json -o ${lipSyncFilename} ${wavFilename} -r phonetic`
+    `${rhubarbPath} -f json -o ${lipSyncFilename} ${wavFilename} -r phonetic`
   ); // -r phonetic is recommended for non-english audios
 
   const data = await fs.readFile(lipSyncFilename, "utf8");
